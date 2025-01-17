@@ -149,7 +149,7 @@ $result = $conn->query($sql);
             ?>
         </tbody>
     </table>
-    <a href="add_pembeli.php" class="add-button">Tambah Pembeli</a>
+    <a href="tambah_pembeli.php" class="add-button">Tambah Pembeli</a>
 </div>
 
 </body>

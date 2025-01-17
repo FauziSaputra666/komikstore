@@ -118,7 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
 
 <div class="container">
-    <a href="transaksi.php" class="back-button">Kembali</a>
+    <a href="transaksi_karyawan.php" class="back-button">Kembali</a>
 <h2>Beli Komik</h2>
 <form method="POST">
     
