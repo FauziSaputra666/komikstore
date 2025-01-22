@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 16 Jan 2025 pada 01.53
+-- Waktu pembuatan: 22 Jan 2025 pada 12.08
 -- Versi server: 10.4.28-MariaDB
 -- Versi PHP: 8.2.4
 
@@ -33,20 +33,21 @@ CREATE TABLE `komik` (
   `pengarang` varchar(100) DEFAULT NULL,
   `genre` varchar(50) DEFAULT NULL,
   `harga` decimal(10,2) DEFAULT NULL,
-  `stok` int(11) NOT NULL
+  `stok` int(11) NOT NULL,
+  `gambar` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data untuk tabel `komik`
 --
 
-INSERT INTO `komik` (`id`, `judul`, `pengarang`, `genre`, `harga`, `stok`) VALUES
-(1, 'Ticket Hero', 'RYU', 'Action', 45000.00, 20),
-(3, '99+ Reinforced Wooden Stick', 'HONGSIL , JIPERY', 'Comedy', 60000.00, 10),
-(4, 'GOOD/BAD FORTUNE', 'Ariel Duyung', 'Drama', 50000.00, 10),
-(5, 'Iblis di Antara Kita', 'Nemo Nullus', 'Thriller', 70000.00, 15),
-(6, 'WiraDelima', 'Qoni', 'Slice of Life', 30000.00, 40),
-(7, 'Reality Quest', 'Joowoon Lee, Taesung', 'Action', 45000.00, 20);
+INSERT INTO `komik` (`id`, `judul`, `pengarang`, `genre`, `harga`, `stok`, `gambar`) VALUES
+(1, 'Ticket Hero', 'RYU', 'Action', 45000.00, 20, 'uploads/gambar1.jpg'),
+(3, '99+ Reinforced Wooden Stick', 'HONGSIL , JIPERY', 'Comedy', 60000.00, 10, 'uploads/gambar2.jpg'),
+(4, 'GOOD/BAD FORTUNE', 'Ariel Duyung', 'Drama', 50000.00, 10, 'uploads/gambar3.jpg'),
+(5, 'Iblis di Antara Kita', 'Nemo Nullus', 'Thriller', 70000.00, 15, 'uploads/gambar5.jpg'),
+(6, 'WiraDelima', 'Qoni', 'Slice of Life', 30000.00, 40, 'uploads/gambar4.jpg'),
+(7, 'Reality Quest', 'Joowoon Lee, Taesung', 'Action', 45000.00, 20, 'uploads/gambar6.jpg');
 
 --
 -- Indexes for dumped tables
@@ -66,7 +67,7 @@ ALTER TABLE `komik`
 -- AUTO_INCREMENT untuk tabel `komik`
 --
 ALTER TABLE `komik`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

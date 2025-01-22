@@ -10,16 +10,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $harga = str_replace('.', '', $_POST['harga']);
     $stok = $_POST['stok'];
 
-    $stmt = $conn->prepare("INSERT INTO komik (judul, pengarang, genre, harga, stok) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssii", $judul, $pengarang, $genre, $harga, $stok); 
-    if ($stmt->execute()) {
-        echo "Komik berhasil ditambahkan!";
-    } else {
-        echo "Error: " . $stmt->error;
-    }
+    // Handling file upload
+    $targetDir = "uploads/"; // Direktori penyimpanan
+    $fileName = basename($_FILES["gambar"]["name"]);
+    $targetFilePath = $targetDir . $fileName;
+    $imageFileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
 
-    $stmt->close();
+    // Validasi tipe file
+    $allowedTypes = array('jpg', 'jpeg', 'png', 'gif');
+    if (in_array($imageFileType, $allowedTypes)) {
+        if (move_uploaded_file($_FILES["gambar"]["tmp_name"], $targetFilePath)) {
+            // Simpan ke database
+            $stmt = $conn->prepare("INSERT INTO komik (judul, pengarang, genre, harga, stok, gambar) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssiss", $judul, $pengarang, $genre, $harga, $stok, $fileName);
+
+            if ($stmt->execute()) {
+                echo "Komik berhasil ditambahkan!";
+            } else {
+                echo "Error: " . $stmt->error;
+            }
+
+            $stmt->close();
+        } else {
+            echo "Maaf, terjadi kesalahan saat mengunggah gambar.";
+        }
+    } else {
+        echo "Hanya file JPG, JPEG, PNG, dan GIF yang diizinkan.";
+    }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -120,6 +139,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <form method="POST">
         <label for="judul">Judul:</label>
         <input type="text" name="judul" required>
+
+        <label for="gambar">Gambar:</label>
+        <input type="file" name="gambar" accept="image/*" required>
         
         <label for="pengarang">Pengarang:</label>
         <input type="text" name="pengarang">

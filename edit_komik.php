@@ -1,6 +1,7 @@
 <?php
 include('config.php');
 
+// Validasi ID dan pengambilan data awal
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     $id = $_GET['id'];
 
@@ -21,13 +22,20 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     exit;
 }
 
-
+// Proses update data
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $judul = $_POST['judul'];
-    $pengarang = $_POST['pengarang'];
-    $genre = $_POST['genre'];
-    $harga = str_replace(['.', ','], ['', '.'], $_POST['harga']);  
-    $stok = $_POST['stok'];
+    $judul = trim($_POST['judul']);
+    $pengarang = trim($_POST['pengarang']);
+    $genre = trim($_POST['genre']);
+    $harga = str_replace(['.', ','], ['', '.'], trim($_POST['harga']));  
+    $stok = trim($_POST['stok']);
+    $gambar = $row['gambar']; // Gambar sebelumnya
+
+    // Validasi data
+    if (empty($judul) || empty($pengarang) || empty($genre) || empty($harga) || empty($stok)) {
+        echo "Semua field harus diisi.";
+        exit;
+    }
 
     if (!is_numeric($harga)) {
         echo "Harga harus berupa angka.";
@@ -39,9 +47,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
-    $sql = "UPDATE komik SET judul = ?, pengarang = ?, genre = ?, harga = ?, stok = ? WHERE id = ?";
+    // Validasi dan upload gambar baru
+    if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
+        $targetDir = "uploads/";
+        $fileName = basename($_FILES['gambar']['name']);
+        $targetFilePath = $targetDir . $fileName;
+        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+
+        // Cek format file
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+        if (!in_array(strtolower($fileType), $allowedTypes)) {
+            echo "Format file tidak didukung. Hanya JPG, JPEG, PNG, dan GIF.";
+            exit;
+        }
+
+        // Pindahkan file ke folder tujuan
+        if (move_uploaded_file($_FILES['gambar']['tmp_name'], $targetFilePath)) {
+            $gambar = $targetFilePath; // Update path gambar
+        } else {
+            echo "Gagal mengunggah gambar.";
+            exit;
+        }
+    }
+
+    // Update data ke database
+    $sql = "UPDATE komik SET judul = ?, pengarang = ?, genre = ?, harga = ?, stok = ?, gambar = ? WHERE id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssssii", $judul, $pengarang, $genre, $harga, $stok, $id);
+    $stmt->bind_param("ssssisi", $judul, $pengarang, $genre, $harga, $stok, $gambar, $id);
 
     if ($stmt->execute()) {
         echo "Data komik berhasil diperbarui!";
@@ -52,7 +84,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         .container {
             max-width: 500px;
-            margin: 0 auto;
+            margin: 50px auto;
             background-color: #fff;
             padding: 20px;
             border-radius: 5px;
@@ -76,25 +107,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         h2 {
             text-align: center;
-            margin-top: 20px;
-        }
-        form {
-            max-width: 500px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
         }
         label {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-weight: bold;
         }
         input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 3px;
             font-size: 16px;
@@ -107,6 +130,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border-radius: 3px;
             cursor: pointer;
             font-size: 16px;
+            display: block;
+            width: 100%;
         }
         button[type="submit"]:hover {
             background-color: #45a049;
@@ -125,44 +150,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .back-button:hover {
             background-color: #45a049;
         }
-        @media (max-width: 600px) {
-            form {
-                max-width: 100%;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <a href="komik.php" class="back-button">Kembali</a>
         <h2>Edit Komik</h2>
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <label for="judul">Judul:</label>
-            <input type="text" name="judul" value="<?php echo htmlspecialchars($row['judul']); ?>" required>
+            <input type="text" name="judul" value="<?= htmlspecialchars($row['judul']); ?>" required>
+
+            <label for="gambar">Gambar (Opsional):</label>
+            <input type="file" name="gambar" accept="image/*">
+            <?php if (!empty($row['gambar'])): ?>
+                <p>Gambar saat ini: <img src="<?= htmlspecialchars($row['gambar']); ?>" alt="Gambar Komik" style="max-width: 100px;"></p>
+            <?php endif; ?>
 
             <label for="pengarang">Pengarang:</label>
-            <input type="text" name="pengarang" value="<?php echo htmlspecialchars($row['pengarang']); ?>" required>
+            <input type="text" name="pengarang" value="<?= htmlspecialchars($row['pengarang']); ?>" required>
 
             <label for="genre">Genre:</label>
             <select name="genre" required>
-                <option value="Action" <?php if ($row['genre'] == "Action") echo "selected"; ?>>Action</option>
-                <option value="Adventure" <?php if ($row['genre'] == "Adventure") echo "selected"; ?>>Adventure</option>
-                <option value="Comedy" <?php if ($row['genre'] == "Comedy") echo "selected"; ?>>Comedy</option>
-                <option value="Drama" <?php if ($row['genre'] == "Drama") echo "selected"; ?>>Drama</option>
-                <option value="Fantasy" <?php if ($row['genre'] == "Fantasy") echo "selected"; ?>>Fantasy</option>
-                <option value="Horror" <?php if ($row['genre'] == "Horror") echo "selected"; ?>>Horror</option>
-                <option value="Mystery" <?php if ($row['genre'] == "Mystery") echo "selected"; ?>>Mystery</option>
-                <option value="Romance" <?php if ($row['genre'] == "Romance") echo "selected"; ?>>Romance</option>
-                <option value="Slice of Life" <?php if ($row['genre'] == "Slice of Life") echo "selected"; ?>>Slice of Life</option>
-                <option value="Sci-Fi" <?php if ($row['genre'] == "Sci-Fi") echo "selected"; ?>>Sci-Fi</option>
-                <option value="Thriller" <?php if ($row['genre'] == "Thriller") echo "selected"; ?>>Thriller</option>
+                <?php
+                $genres = ["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mystery", "Romance", "Slice of Life", "Sci-Fi", "Thriller"];
+                foreach ($genres as $genre) {
+                    $selected = $row['genre'] === $genre ? "selected" : "";
+                    echo "<option value='$genre' $selected>$genre</option>";
+                }
+                ?>
             </select>
 
             <label for="harga">Harga:</label>
-            <input type="text" name="harga" value="<?php echo number_format($row['harga'], 0, ',', '.'); ?>" required>
+            <input type="text" name="harga" value="<?= number_format($row['harga'], 0, ',', '.'); ?>" required>
             
             <label for="stok">Stok:</label>
-            <input type="number" name="stok" value="<?php echo htmlspecialchars($row['stok']); ?>" required>
+            <input type="number" name="stok" value="<?= htmlspecialchars($row['stok']); ?>" required>
+
             <button type="submit">Simpan Perubahan</button>
         </form>
     </div>

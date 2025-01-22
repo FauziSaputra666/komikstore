@@ -1,6 +1,7 @@
 <?php
 include('config.php'); 
-$sql = "SELECT id, judul, pengarang, genre, harga, stok FROM komik";
+
+$sql = "SELECT id, judul, pengarang, genre, harga, stok, gambar FROM komik";
 $result = $conn->query($sql);
 
 function format_currency($value) {
@@ -135,40 +136,55 @@ function format_currency($value) {
     <h2>Daftar Komik</h2>
 
     <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Judul</th>
-                <th>Pengarang</th>
-                <th>Genre</th>
-                <th>Harga</th>
-                <th>Stok</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo "<tr>";
-                    echo "<td>" . $row['id'] . "</td>";
-                    echo "<td>" . $row['judul'] . "</td>";
-                    echo "<td>" . $row['pengarang'] . "</td>";
-                    echo "<td>" . $row['genre'] . "</td>";
-                    echo "<td>" . format_currency($row['harga']) . "</td>";
-                    echo "<td>" . $row['stok'] . "</td>";
-                    echo "<td class='action-buttons'>
-                            <a href='edit_komik.php?id=" . $row['id'] . "' class='edit-button'>Edit</a>
-                            <a href='delete_komik.php?id=" . $row['id'] . "' class='delete-button' onclick='return confirm(\"Yakin ingin menghapus?\")'>Hapus</a>
-                          </td>";
-                    echo "</tr>";
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Gambar</th>
+            <th>Judul</th>
+            <th>Pengarang</th>
+            <th>Genre</th>
+            <th>Harga</th>
+            <th>Stok</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                echo "<tr>";
+                echo "<td>" . htmlspecialchars($row['id']) . "</td>";
+                if (!empty($row['gambar'])) {
+                    $file_path = htmlspecialchars($row['gambar']);
+                    if (!str_starts_with($file_path, 'uploads/')) {
+                        $file_path = 'uploads/' . $file_path;
+                    }
+                    if (file_exists($file_path)) {
+                        echo "<td><img src='$file_path' alt='" . htmlspecialchars($row['judul']) . "' style='width: 80px; height: auto;'></td>";
+                    } else {
+                        echo "<td><em>File tidak ditemukan di path: $file_path</em></td>";
+                    }
+                } else {
+                    echo "<td><em>Gambar tidak tersedia</em></td>";
                 }
-            } else {
-                echo "<tr><td colspan='7' style='text-align: center;'>Tidak ada data komik.</td></tr>";
+                                
+                echo "<td>" . htmlspecialchars($row['judul']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['pengarang']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['genre']) . "</td>";
+                echo "<td>" . format_currency($row['harga']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['stok']) . "</td>";
+                echo "<td class='action-buttons'>
+                        <a href='edit_komik.php?id=" . htmlspecialchars($row['id']) . "' class='edit-button'>Edit</a>
+                        <a href='delete_komik.php?id=" . htmlspecialchars($row['id']) . "' class='delete-button' onclick='return confirm(\"Yakin ingin menghapus?\")'>Hapus</a>
+                      </td>";
+                echo "</tr>";
             }
-            ?>
-        </tbody>
-    </table>
+        } else {
+            echo "<tr><td colspan='8' style='text-align: center;'>Tidak ada data komik.</td></tr>";
+        }
+        ?>
+    </tbody>
+</table>
     <a href="add_komik.php" class="add-button">Tambah Komik</a>
 </div>
 
