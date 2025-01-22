@@ -132,7 +132,7 @@ $role = $_SESSION['role']; // Role user yang login
         <img src="images/logo.png" alt="Logo" style="max-width: 150px; margin-bottom: 20px;">
     </div>
     <h2>Selamat datang, <?php echo htmlspecialchars($username); ?>!</h2>
-        <h3>Silahkan pilih menu untuk melihat komik dan membeli komik:</h3>
+        <h3>Silahkan pilih menu untuk melihat komik:</h3>
 
         <div class="nav-buttons">
             <a href="list_komik.php">Data Komik</a>
