@@ -165,7 +165,7 @@ function format_currency($value) {
                         echo "<td><em>File tidak ditemukan di path: $file_path</em></td>";
                     }
                 } else {
-                    echo "<td><em>Gambar tidak tersedia</em></td>";
+                    echo "<td><em>Gambar tidak tersedia</em></td>";   
                 }
                                 
                 echo "<td>" . htmlspecialchars($row['judul']) . "</td>";

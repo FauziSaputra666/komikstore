@@ -1,49 +1,60 @@
 <?php
 session_start();
+include('config.php');
 
 if (isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit();
 }
 
+$message = "";
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    include('config.php'); 
+    $email = $_POST['email'] ?? null;
+    $password = $_POST['password'] ?? null;
 
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+    if ($email && $password) {
+        $sql = "SELECT * FROM users WHERE email = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-    $sql = "SELECT * FROM users WHERE email = '$email'";
-    $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
 
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
+            if (password_verify($password, $row['password'])) {
+                $_SESSION['user_id'] = $row['id'];
+                $_SESSION['username'] = $row['username'];
+                $_SESSION['role'] = $row['role'];
 
-        if (password_verify($password, $row['password'])) {
-            $_SESSION['user_id'] = $row['id'];
-            $_SESSION['username'] = $row['username'];
-            $_SESSION['role'] = $row['role'];  
-
-            if ($_SESSION['role'] == 'admin') {
-                header("Location: index.php");  // Halaman admin
-            } elseif ($_SESSION['role'] == 'karyawan') {
-                header("Location: index_karyawan.php");  // Halaman karyawan
+                if ($_SESSION['role'] == 'admin') {
+                    header("Location: index.php");
+                } elseif ($_SESSION['role'] == 'karyawan') {
+                    header("Location: index_karyawan.php");
+                } else {
+                    header("Location: index_user.php");
+                }
+                exit();
             } else {
-                header("Location: index_user.php");  // Halaman user biasa
+                $message = "Email atau password salah!";
             }
-            exit();
         } else {
             $message = "Email atau password salah!";
         }
-    } else {
-        $message = "Email atau password salah!";
+    } elseif (isset($_POST['guest'])) {
+        // Login sebagai Guest
+        $_SESSION['user_id'] = 'guest';
+        $_SESSION['username'] = 'Guest';
+        $_SESSION['role'] = 'guest';
+        header("Location: index_user.php");
+        exit();
     }
 }
-
 ?>
 
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -105,8 +116,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             padding: 12px;
             font-size: 1rem;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-            transition: transform 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease;
         }
 
         button:hover {
@@ -155,7 +165,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <div class="container">
     <h2>Login</h2>
-    <?php if (isset($message)) { echo "<p class='message'>$message</p>"; } ?>
+    <?php if (!empty($message)) { echo "<p class='message'>$message</p>"; } ?>
     <form method="POST">
         <div class="form-group">
             <label for="email">Email:</label>
@@ -167,9 +177,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
         <button type="submit">Login</button>
     </form>
+
+    <form method="POST" style="margin-top: 10px;">
+        <button type="submit" name="guest">Guest</button>
+    </form>
+
     <div class="register-link">
         <p>Belum punya akun? <a href="register.php">Daftar di sini</a></p>
     </div>
 </div>
+
 </body>
 </html>
