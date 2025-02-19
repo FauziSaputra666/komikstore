@@ -43,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $message = "Email atau password salah!";
         }
     } elseif (isset($_POST['guest'])) {
-        // Login sebagai Guest
+
         $_SESSION['user_id'] = 'guest';
         $_SESSION['username'] = 'Guest';
         $_SESSION['role'] = 'guest';
@@ -163,7 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body>
 
-<div class="container">
+<div class="container">     
     <h2>Login</h2>
     <?php if (!empty($message)) { echo "<p class='message'>$message</p>"; } ?>
     <form method="POST">

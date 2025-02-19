@@ -12,11 +12,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Handling file upload
     $targetDir = "uploads/"; // Direktori penyimpanan
-    $fileName = basename($_FILES["gambar"]["name"]);
+    if (isset($_FILES["gambar"]) && $_FILES["gambar"]["error"] == 0) {
+        $fileName = basename($_FILES["gambar"]["name"]);
+    } else {
+        echo "Harap pilih file gambar.";
+        exit;
+    }
+    
     $targetFilePath = $targetDir . $fileName;
     $imageFileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
 
-    // Validasi tipe file
     $allowedTypes = array('jpg', 'jpeg', 'png', 'gif');
     if (in_array($imageFileType, $allowedTypes)) {
         if (move_uploaded_file($_FILES["gambar"]["tmp_name"], $targetFilePath)) {
@@ -136,7 +141,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <div class="container">
     <a href="komik.php" class="back-button">Kembali</a>
     <h2>Tambah Komik</h2>
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
         <label for="judul">Judul:</label>
         <input type="text" name="judul" required>
 
@@ -149,16 +154,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <label for="genre">Genre:</label>
         <select name="genre" required>
             <option value="Action">Action</option>
-            <option value="Adventure">Adventure</option>
             <option value="Comedy">Comedy</option>
             <option value="Drama">Drama</option>
             <option value="Fantasy">Fantasy</option>
             <option value="Horror">Horror</option>
+            <option value="Kingdom">Kingdom</option>
+            <option value="Lokal">Lokal</option>
             <option value="Mystery">Mystery</option>
             <option value="Romance">Romance</option>
             <option value="Slice of Life">Slice of Life</option>
-            <option value="Sci-Fi">Sci-Fi</option>
             <option value="Thriller">Thriller</option>
+            <option value="Webnovel">Webnovel</option>
         </select>
         
         <label for="harga">Harga:</label>

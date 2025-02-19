@@ -2,37 +2,111 @@
 include('config.php');
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    
     $id_komik = $conn->real_escape_string($_POST['id_komik']);
     $id_pembeli = $conn->real_escape_string($_POST['id_pembeli']);
     $id_penjual = $conn->real_escape_string($_POST['id_penjual']);
-    $jumlah = intval($_POST['jumlah']); 
+    $jumlah = intval($_POST['jumlah']);
 
     if ($jumlah <= 0) {
         echo "Jumlah harus lebih besar dari 0.";
         exit;
     }
 
-    $sql_komik = "SELECT harga FROM komik WHERE id = '$id_komik'";
+    // Cek stok komik
+    $sql_komik = "SELECT harga, stok FROM komik WHERE id = '$id_komik'";
     $result_komik = $conn->query($sql_komik);
 
     if ($result_komik->num_rows > 0) {
         $komik = $result_komik->fetch_assoc();
+
+        if ($komik['stok'] < $jumlah) {
+            echo "Stok tidak mencukupi!";
+            exit;
+        }
+
         $total_harga = $komik['harga'] * $jumlah;
 
-        $stmt = $conn->prepare("INSERT INTO transaksi (id_komik, id_pembeli, id_penjual, tanggal, jumlah, total_harga) VALUES (?, ?, ?, NOW(), ?, ?)");
-        $stmt->bind_param("iiiii", $id_komik, $id_pembeli, $id_penjual, $jumlah, $total_harga);
+        // Mulai transaksi
+        $conn->begin_transaction();
 
-        if ($stmt->execute()) {
-            echo "Transaksi berhasil ditambahkan!";
-        } else {
-            echo "Error: " . $stmt->error;
+        try {
+            // Insert ke tabel transaksi
+            $stmt = $conn->prepare("INSERT INTO transaksi (id_komik, id_pembeli, id_penjual, tanggal, jumlah, total_harga) VALUES (?, ?, ?, NOW(), ?, ?)");
+            $stmt->bind_param("iiiii", $id_komik, $id_pembeli, $id_penjual, $jumlah, $total_harga);
+            $stmt->execute();
+            $id_transaksi = $stmt->insert_id;
+            $stmt->close();
+
+            // Kurangi stok komik
+            $stmt_update = $conn->prepare("UPDATE komik SET stok = stok - ? WHERE id = ?");
+            $stmt_update->bind_param("ii", $jumlah, $id_komik);
+            $stmt_update->execute();
+            $stmt_update->close();
+
+            // Commit transaksi
+            $conn->commit();
+
+            // Ambil data transaksi terakhir
+            $sql_struk = "SELECT t.id, k.judul AS komik, p.nama AS pembeli, pen.nama AS penjual, t.jumlah, t.total_harga, t.tanggal
+                        FROM transaksi t
+                        JOIN komik k ON t.id_komik = k.id
+                        JOIN pembeli p ON t.id_pembeli = p.id
+                        JOIN penjual pen ON t.id_penjual = pen.id
+                        WHERE t.id = '$id_transaksi'";
+            $result_struk = $conn->query($sql_struk);
+            $data_struk = $result_struk->fetch_assoc();
+
+            // Tampilkan struk di halaman dan jendela baru dengan styling
+            $struk_html = "
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; }
+                .struk-container { width: 300px; margin: auto; padding: 20px; border: 2px solid black; }
+                h2 { margin-bottom: 10px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                table, th, td { border: 1px solid black; padding: 8px; }
+                .total { font-weight: bold; font-size: 16px; }
+                .btn { margin-top: 10px; padding: 8px; border: none; cursor: pointer; font-size: 14px; }
+                .print-btn { background: green; color: white; }
+                .close-btn { background: red; color: white; }
+            </style>
+
+            <div class='struk-container'>
+                <h2>Struk Pembelian</h2>
+                <table>
+                    <tr><td><b>ID Transaksi</b></td><td>{$data_struk['id']}</td></tr>
+                    <tr><td><b>Komik</b></td><td>{$data_struk['komik']}</td></tr>
+                    <tr><td><b>Pembeli</b></td><td>{$data_struk['pembeli']}</td></tr>
+                    <tr><td><b>Penjual</b></td><td>{$data_struk['penjual']}</td></tr>
+                    <tr><td><b>Jumlah</b></td><td>{$data_struk['jumlah']}</td></tr>
+                    <tr><td class='total'><b>Total Harga</b></td><td class='total'>Rp " . number_format($data_struk['total_harga'], 0, ',', '.') . "</td></tr>
+                    <tr><td><b>Tanggal</b></td><td>{$data_struk['tanggal']}</td></tr>
+                </table>
+                <button class='btn print-btn' onclick='window.print()'>Cetak Struk</button>
+                <button class='btn close-btn' onclick='window.location.href=\"transaksi.php\"'>Kembali</button>
+            </div>
+            ";
+
+            // Tampilkan struk di halaman
+            echo $struk_html;
+
+            // Buka struk di jendela baru dengan styling yang sama
+            echo "<script>
+                let strukWindow = window.open('', '_blank');
+                strukWindow.document.write(`$struk_html`);
+                strukWindow.document.write('<script>setTimeout(() => { window.location.href=\"transaksi.php\"; }, 5000)<\/script>');
+            </script>";
+
+            exit;
+        } catch (Exception $e) {
+            $conn->rollback();
+            echo "Error: " . $e->getMessage();
         }
-        $stmt->close();
     } else {
         echo "Komik tidak ditemukan.";
     }
 }
+
+
 ?>
 
 <!DOCTYPE html>
