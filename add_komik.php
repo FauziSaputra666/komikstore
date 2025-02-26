@@ -10,8 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $harga = str_replace('.', '', $_POST['harga']);
     $stok = $_POST['stok'];
 
-    // Handling file upload
-    $targetDir = "uploads/"; // Direktori penyimpanan
+    $targetDir = "uploads/"; 
     if (isset($_FILES["gambar"]) && $_FILES["gambar"]["error"] == 0) {
         $fileName = basename($_FILES["gambar"]["name"]);
     } else {
@@ -25,7 +24,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $allowedTypes = array('jpg', 'jpeg', 'png', 'gif');
     if (in_array($imageFileType, $allowedTypes)) {
         if (move_uploaded_file($_FILES["gambar"]["tmp_name"], $targetFilePath)) {
-            // Simpan ke database
             $stmt = $conn->prepare("INSERT INTO komik (judul, pengarang, genre, harga, stok, gambar) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->bind_param("sssiss", $judul, $pengarang, $genre, $harga, $stok, $fileName);
 

@@ -12,7 +12,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
-    // Cek stok komik
     $sql_komik = "SELECT harga, stok FROM komik WHERE id = '$id_komik'";
     $result_komik = $conn->query($sql_komik);
 
@@ -20,33 +19,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $komik = $result_komik->fetch_assoc();
 
         if ($komik['stok'] < $jumlah) {
-            echo "Stok tidak mencukupi!";
+            echo "<script>alert('Stok buku tidak mencukupi!'); window.history.back();</script>";
             exit;
-        }
+        }     
 
         $total_harga = $komik['harga'] * $jumlah;
 
-        // Mulai transaksi
         $conn->begin_transaction();
 
         try {
-            // Insert ke tabel transaksi
             $stmt = $conn->prepare("INSERT INTO transaksi (id_komik, id_pembeli, id_penjual, tanggal, jumlah, total_harga) VALUES (?, ?, ?, NOW(), ?, ?)");
             $stmt->bind_param("iiiii", $id_komik, $id_pembeli, $id_penjual, $jumlah, $total_harga);
             $stmt->execute();
             $id_transaksi = $stmt->insert_id;
             $stmt->close();
 
-            // Kurangi stok komik
             $stmt_update = $conn->prepare("UPDATE komik SET stok = stok - ? WHERE id = ?");
             $stmt_update->bind_param("ii", $jumlah, $id_komik);
             $stmt_update->execute();
             $stmt_update->close();
 
-            // Commit transaksi
             $conn->commit();
 
-            // Ambil data transaksi terakhir
             $sql_struk = "SELECT t.id, k.judul AS komik, p.nama AS pembeli, pen.nama AS penjual, t.jumlah, t.total_harga, t.tanggal
                         FROM transaksi t
                         JOIN komik k ON t.id_komik = k.id
@@ -56,7 +50,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $result_struk = $conn->query($sql_struk);
             $data_struk = $result_struk->fetch_assoc();
 
-            // Tampilkan struk di halaman dan jendela baru dengan styling
             $struk_html = "
             <style>
                 body { font-family: Arial, sans-serif; text-align: center; }
@@ -86,10 +79,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
             ";
 
-            // Tampilkan struk di halaman
             echo $struk_html;
 
-            // Buka struk di jendela baru dengan styling yang sama
             echo "<script>
                 let strukWindow = window.open('', '_blank');
                 strukWindow.document.write(`$struk_html`);
